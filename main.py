@@ -1,32 +1,51 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import engine, Base, get_db
+from models import Producto
 from pydantic import BaseModel
-from typing import Optional
+
 
 app = FastAPI()
 
-# 1. Modelado de Datos (Pydantic)
-# Esto define qué datos ESPERAS recibir. Si te mandan otra cosa, falla.
-class Item(BaseModel):
-    nombre: str
-    precio:float
-    oferta: Optional[bool] = None
+# Evento inicial: Crear las tablas automaticamente
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-# 2. Ruta GET
+# Modelo Pydantic para validación de datos
+class ProductoCreate(BaseModel):
+    nombre: str
+    precio: float
+    descripcion: str = None
+
+# RUTA 1: Crear Producto (POST)
+@app.post("/productos/")
+async def crear_producto(item: ProductoCreate, db: AsyncSession = Depends(get_db)):
+    # Creamos una instancia del modelo DB con los datos recibidos
+    nuevo_producto = Producto(
+        nombre=item.nombre,
+        precio=item.precio,
+        descripcion=item.descripcion
+    )
+    db.add(nuevo_producto) # Agregamos a la sesión
+    await db.commit() # Guardamos en la BD real
+    await db.refresh(nuevo_producto) # Refrescamos para obtener datos generados (ej. ID)
+    return nuevo_producto
+
+# RUTA 2: Listar Productos (GET)
+@app.get("/productos/")
+async def leer_productos(db: AsyncSession = Depends(get_db)):
+    # Ejecutar una consulta SQL tip "Select * from productos"
+    result = await db.execute(select(Producto))
+    productos = result.scalars().all()
+    return productos
+
+
+
+
 @app.get("/")
 def leer_raiz():
     return {"mensaje": "¡Bienvenido a mi API"}
 
-# 3. Ruta GET con Parámetro (validación de tipos)
-@app.get("/items/{item_id}")
-def leer_item(item_id: int, q:str = None):
-    # FastAPI convierte item_id a entero automáticamente
-    return {"item_id": item_id, "query": q}
-
-# 4. Ruta POST (Crear datos)
-@app.post("/items/")
-async def crear_item(item: Item):
-    # 'item' ya viene validado como objeto Python, no es un JSON crudo
-    precio_final = item.precio
-    if item.oferta:
-        precio_final = item.precio * 0.8 
-    return {"nombre": item.nombre, "precio_final": precio_final}
