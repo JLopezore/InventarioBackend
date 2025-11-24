@@ -1,0 +1,45 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Entornos Virtuales ---
+# Es vital no subir las librerías instaladas
+venv/
+.venv/
+env/
+.env_local/
+
+# --- Variables de Entorno y Secretos ---
+# ¡CRÍTICO! Nunca subas tus contraseñas o credenciales
+.env
+.env.*
+! .env.example
+
+# --- IDEs y Editores (Linux/General) ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Docker ---
+# Ignora archivos de override locales si los usas
+docker-compose.override.yml
+
+# --- Base de Datos ---
+# Si alguna vez decides mapear la BD a una carpeta local en vez de un volumen
+postgres_data/
+pgdata/
+*.sqlite3
+*.db
+
+# --- Testing y Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Distribución ---
+build/
+dist/
+*.egg-info/

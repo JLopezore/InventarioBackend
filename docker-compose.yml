@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Servicio 1: Tu API (FastAPI)
+  web:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app  # ¡Truco clave! Sincroniza tu carpeta actual con el contenedor para desarrollo en vivo
+    ports:
+      - "8000:8000"
+    environment:
+      # OJO: Aquí 'localhost' cambia por el nombre del servicio de la BD: 'db'
+      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/tienda
+    depends_on:
+      - db
+
+  # Servicio 2: Base de Datos (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Para que los datos no se borren al apagar
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password123
+      - POSTGRES_DB=tienda
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
