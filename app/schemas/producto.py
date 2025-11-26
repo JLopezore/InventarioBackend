@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional, Dict, Any
 from datetime import date
 
@@ -7,6 +7,20 @@ class Dimensiones(BaseModel):
     medida_ancho: float
     medida_profundidad: float
     unidad_medida: str  # Ej. 'cm'
+
+    @model_validator(mode='before')
+    @classmethod
+    def convertir_sql_record(cls, v):
+        # Si v existe, no es un diccionario y parece un Record de base de datos...
+        if v is not None and not isinstance(v, dict) and not hasattr(v, '__dict__'):
+            try:
+                return dict(v) # ...lo forzamos a ser un diccionario.
+            except (ValueError, TypeError):
+                pass
+        return v
+
+    class Config:
+        from_attributes = True
 
 class ProductoBase(BaseModel):
     nombre: str
@@ -82,6 +96,7 @@ class ProductoCreate(ProductoBase):
 
 class ProductoResponse(ProductoBase):
     id_prod: int
+    tipo_producto: str
 
     class Config:
         from_attributes = True
