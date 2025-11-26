@@ -4,7 +4,7 @@ services:
   # Servicio 1: Tu API (FastAPI)
   web:
     build: .
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app  # ¡Truco clave! Sincroniza tu carpeta actual con el contenedor para desarrollo en vivo
     ports:
