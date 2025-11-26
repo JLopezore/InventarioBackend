@@ -5,7 +5,7 @@ Este documento detalla la correspondencia entre los requisitos solicitados en el
 1. Jerarquía de Clases (Herencia)
 
 Requisito: Modelar una relación de herencia entre entidades (Superclase y Subclases).
-Estado: ✅ Cumplido
+Estado: Cumplido
 
 Justificación Técnica:
 Se implementó el patrón "Joined Table Inheritance" (Herencia de Tablas Unidas) utilizando SQLAlchemy. Existe una tabla padre (productos) y múltiples tablas hijas (bebidas, carnes, etc.) que heredan los atributos base y añaden los propios.
@@ -40,7 +40,7 @@ class Bebida(Producto):
 2. Tipo Compuesto (UDT)
 
 Requisito: Crear un tipo de dato estructurado para atributos complejos.
-Estado: ✅ Cumplido (Vía JSON Moderno)
+Estado: Cumplido (Vía JSON Moderno)
 
 Justificación Técnica:
 Se utiliza el tipo de dato JSON de PostgreSQL para almacenar la estructura compleja de Dimensiones. Esto permite guardar objetos estructurados (alto, ancho, profundidad, unidad) dentro de una sola columna, emulando el comportamiento de un UDT moderno.
@@ -67,7 +67,7 @@ class Dimensiones(BaseModel):
 3. Referencias a Objetos (OIDs)
 
 Requisito: Usar referencias directas a objetos para relaciones clave.
-Estado: ✅ Cumplido
+Estado: Cumplido
 
 Justificación Técnica:
 Se implementó una relación Referencial entre Producto y Ubicacion. El producto contiene una referencia (Foreign Key) que apunta a la instancia del objeto Ubicacion donde se encuentra almacenado.
@@ -85,7 +85,7 @@ ubicacion = relationship("Ubicacion", back_populates="productos")
 4. Transacciones (Persistencia)
 
 Requisito: Demostrar el uso de transacciones (BEGIN, COMMIT, ROLLBACK).
-Estado: ✅ Cumplido
+Estado: Cumplido
 
 Justificación Técnica:
 Cada operación de creación, actualización o eliminación (CUD) se maneja dentro de una sesión de base de datos atómica. SQLAlchemy gestiona el BEGIN implícitamente al iniciar la sesión y se requiere un commit() explícito para persistir. Si ocurre un error, FastAPI realiza un ROLLBACK automático (cierre de sesión sin guardar).
@@ -112,7 +112,7 @@ async def crear_bebida(...):
 5. Consultas Polimórficas
 
 Requisito: Consultas que demuestren navegación sobre la jerarquía de herencia.
-Estado: ✅ Cumplido
+Estado: Cumplido
 
 Justificación Técnica:
 El endpoint general de productos realiza una consulta polimórfica. Al consultar la tabla base Producto, el ORM automáticamente realiza los JOINs necesarios para traer las instancias correctas de las subclases (Bebida, Carne, etc.) en una sola lista heterogénea.
@@ -132,7 +132,7 @@ async def leer_productos(...):
 6. Método Almacenado
 
 Requisito: Invocación de métodos almacenados en las consultas.
-Estado: ✅ Cumplido
+Estado: Cumplido
 
 Justificación Técnica:
 Se definió una función almacenada en PostgreSQL (calcular_valor_total u otra lógica de negocio) que encapsula lógica en la base de datos. Desde el backend (FastAPI), se invoca esta función utilizando sentencias SQL textuales (text) a través de SQLAlchemy, demostrando la interacción directa con métodos del SGBD.
