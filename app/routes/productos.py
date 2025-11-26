@@ -148,7 +148,7 @@ async def eliminar_producto(producto_id: int, db: AsyncSession = Depends(get_db)
 
 @router.get("/{producto_id}/valor-inventario")
 async def obtener_valor_inventario(producto_id: int, db: AsyncSession = Depends(get_db)):
-    query = text("SELECT calcular_valor_total(:id)")
+    query = text("SELECT calcular_valor_inventario(:id)")
     result = await db.execute(query, {"id": producto_id})
     valor_total = result.scalar()
     
