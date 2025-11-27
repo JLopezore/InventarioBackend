@@ -15,8 +15,9 @@ from app.models.dulce import Dulce
 from app.models.enlatado import Enlatado
 from app.models.licor import Licor
 from app.models.limpieza import Limpieza
+from app.models.ubicacion import Ubicacion
 
-from app.schemas.producto import ( ProductoResponse, BebidaCreate, CarneCreate, PanCreate, AbarroteCreate, DulceCreate, EnlatadoCreate, LicorCreate, LimpiezaCreate )
+from app.schemas.producto import ( ProductoResponse, BebidaCreate, CarneCreate, PanCreate, AbarroteCreate, DulceCreate, EnlatadoCreate, LicorCreate, LimpiezaCreate, ubicacionCreate, UbicacionResponse )
 
 router = APIRouter(
     prefix="/productos",
@@ -38,6 +39,13 @@ async def leer_producto(producto_id: int, db: AsyncSession = Depends(get_db)):
     if producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto 
+
+# Obtener ubicacaciones 
+@router.get("/ubicaciones/", response_model=List[UbicacionResponse])
+async def leer_ubicaciones(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Ubicacion))
+    ubicaciones = result.scalars().all()
+    return ubicaciones
 
 # Ruta para obtener todos los productos de una categoría específica
 @router.get("/tipo/{tipo}", response_model=List[ProductoResponse])

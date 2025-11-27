@@ -91,6 +91,7 @@ class ubicacionCreate(BaseModel):
     estante: str
     nivel: int
 
+
 class ProductoCreate(ProductoBase):
     pass
 
@@ -98,5 +99,9 @@ class ProductoResponse(ProductoBase):
     id_prod: int
     tipo_producto: str
 
+    class Config:
+        from_attributes = True
+
+class UbicacionResponse(ubicacionCreate):
     class Config:
         from_attributes = True

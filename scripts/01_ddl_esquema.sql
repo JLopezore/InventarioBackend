@@ -5,8 +5,7 @@
 -- ==========================================================
 
 -- 1. REQUISITO: TYPE / UDT (Tipo Compuesto)
--- Aunque en la app usamos JSONB por flexibilidad moderna, 
--- aquí definimos el tipo estructurado para cumplir el requisito académico.
+-- Definimos el tipo para cumplir el requisito académico
 CREATE TYPE tipo_dimensiones AS (
     medida_alto FLOAT,
     medida_ancho FLOAT,
@@ -21,8 +20,12 @@ CREATE TABLE productos (
     precio FLOAT NOT NULL,
     stock INT NOT NULL,
     fecha_caducidad DATE,
-    -- Usamos el UDT creado arriba (o JSONB si se prefiere modernidad)
-    dims tipo_dimensiones, 
+    
+    -- TRUCO DE COMPATIBILIDAD:
+    -- Usamos JSON para compatibilidad con el Backend Web (FastAPI),
+    -- pero conceptualmente mapea a la estructura del TYPE definido arriba.
+    dims JSON, 
+    
     tipo_producto VARCHAR(50), -- Discriminador para polimorfismo
     id_ubicacion INT -- Referencia (FK) se define más abajo
 );
@@ -41,8 +44,7 @@ ADD CONSTRAINT fk_producto_ubicacion
 FOREIGN KEY (id_ubicacion) REFERENCES ubicaciones(id_ubicacion);
 
 -- 4. REQUISITO: HERENCIA (Subclases)
--- Nota: Implementación "Joined Table Inheritance" (Estándar ORM/Industrial)
--- Se usa Foreign Key hacia la PK del padre para simular la extensión del objeto.
+-- Nota: Implementación "Joined Table Inheritance"
 
 -- Subclase: Bebidas
 CREATE TABLE bebidas (
@@ -72,7 +74,52 @@ CREATE TABLE abarrotes (
     marca VARCHAR(50)
 );
 
--- (Repetir para Dulces, Enlatados, etc...)
+-- Subclase: Dulces
+CREATE TABLE dulces (
+    id_dulce INT PRIMARY KEY REFERENCES productos(id_prod),
+    tipo_empaque VARCHAR(50),
+    peso_unidad FLOAT,
+    sabor VARCHAR(50),
+    es_libre_azucar BOOLEAN
+);
+
+-- Subclase: Enlatados
+CREATE TABLE enlatados (
+    id_enlatado INT PRIMARY KEY REFERENCES productos(id_prod),
+    tipo_envase VARCHAR(50),
+    peso_drenado FLOAT,
+    peso_neto FLOAT,
+    tipo_alimento VARCHAR(50)
+);
+
+-- Subclase: Licores
+CREATE TABLE licores (
+    id_licor INT PRIMARY KEY REFERENCES productos(id_prod),
+    grado_alcohol FLOAT,
+    tipo_licor VARCHAR(50),
+    capacidad_ml FLOAT,
+    anos_anejamiento INT,
+    pais_origen VARCHAR(50)
+);
+
+-- Subclase: Limpieza
+CREATE TABLE limpieza (
+    id_limpieza INT PRIMARY KEY REFERENCES productos(id_prod),
+    presentacion VARCHAR(50),
+    es_biodegradable BOOLEAN,
+    contenido_neto FLOAT,
+    unidad_contenido VARCHAR(20),
+    uso_principal VARCHAR(50)
+);
+
+-- Subclase: Panaderia
+CREATE TABLE panaderia ( -- Corregido nombre de tabla a plural/estándar si se requiere
+    id_pan INT PRIMARY KEY REFERENCES productos(id_prod),
+    tipo_masa VARCHAR(50),
+    presentacion VARCHAR(50),
+    es_artesanal BOOLEAN
+);
+
 
 -- 5. REQUISITO: MÉTODOS ALMACENADOS (Stored Procedure/Function)
 -- Función para calcular el valor monetario del inventario de un producto

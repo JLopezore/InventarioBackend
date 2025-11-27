@@ -1,151 +1,135 @@
-# Proyecto: Sistema de Inventario de Tienda (Backend)
+# Sistema de Inventario ORDBMS
 
-Este documento detalla la correspondencia entre los requisitos solicitados en el documento "Proyecto BDOR-1.pdf" y la implementación técnica realizada en Python (FastAPI) y PostgreSQL.
+Este proyecto implementa un sistema de base de datos objeto-relacional para la gestión de inventario de una tienda, utilizando **PostgreSQL** y **Python (FastAPI)**.
 
-1. Jerarquía de Clases (Herencia)
+El sistema demuestra características avanzadas de bases de datos como:
 
-Requisito: Modelar una relación de herencia entre entidades (Superclase y Subclases).
-Estado: Cumplido
+- **Herencia de Tablas** (_Joined Table Inheritance_).
+    
+- **Tipos Compuestos / UDT** (Mapeo de objetos estructurados).
+    
+- **Métodos Almacenados** (Lógica de negocio en PL/pgSQL).
 
-Justificación Técnica:
-Se implementó el patrón "Joined Table Inheritance" (Herencia de Tablas Unidas) utilizando SQLAlchemy. Existe una tabla padre (productos) y múltiples tablas hijas (bebidas, carnes, etc.) que heredan los atributos base y añaden los propios.
+- **Polimorfismo** en consultas.
+    
 
-Evidencia en Código:
+## Requisitos Previos
 
-Archivo: app/models/producto.py
+Únicamente se requiere tener instalado **Docker** y **Docker Compose**.
 
-Código:
+> **Nota:** No es necesario instalar Python ni PostgreSQL localmente, ya que todo el entorno está contenerizado.
 
-# Superclase
-class Producto(Base):
-    __tablename__ = "productos"
-    id_prod = Column(Integer, primary_key=True)
-    tipo_producto = Column(String(50)) # Discriminador
+## Cumplimiento de Requisitos
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'producto',
-        'polymorphic_on': tipo_producto
-    }
+Este proyecto satisface los puntos técnicos solicitados en la rúbrica de evaluación mediante la siguiente implementación:
 
-# Subclase (Ejemplo)
-class Bebida(Producto):
-    __tablename__ = "bebidas"
-    # La Primary Key es también Foreign Key al padre
-    id_bebida = Column(Integer, ForeignKey('productos.id_prod'), primary_key=True)
+### 1. Jerarquía de Clases (Herencia)
 
-    __mapper_args__ = {'polymorphic_identity': 'bebida'}
+- **Estado:** Cumplido
+    
+- **Descripción:** Se implementó el patrón _"Joined Table Inheritance"_ (Herencia de Tablas Unidas). Existe una tabla padre (`productos`) y múltiples tablas hijas (`bebidas`, `carnes`, etc.) que heredan los atributos base.
+    
+- **Implementación:** SQLAlchemy gestiona la unión automática de tablas mediante _Foreign Keys_ hacia la llave primaria del padre.
+    
 
+### 2. Tipo Compuesto (UDT)
 
+- **Estado:** Cumplido
+    
+- **Descripción:** Se utiliza el tipo de dato estructurado para almacenar dimensiones físicas complejas (alto, ancho, profundidad, unidad) en una sola columna.
+    
+- **Implementación:** En los scripts SQL se define explícitamente con `CREATE TYPE`, y en la aplicación se maneja mediante columnas JSON para flexibilidad moderna y compatibilidad web.
+    
 
-2. Tipo Compuesto (UDT)
+### 3. Referencias a Objetos (OIDs)
 
-Requisito: Crear un tipo de dato estructurado para atributos complejos.
-Estado: Cumplido (Vía JSON Moderno)
+- **Estado:** Cumplido
+    
+- **Descripción:** Se implementaron relaciones directas entre objetos.
+    
+- **Implementación:** La clase `Producto` mantiene una referencia directa a la clase `Ubicacion`, permitiendo la navegación entre objetos relacionados.
+    
 
-Justificación Técnica:
-Se utiliza el tipo de dato JSON de PostgreSQL para almacenar la estructura compleja de Dimensiones. Esto permite guardar objetos estructurados (alto, ancho, profundidad, unidad) dentro de una sola columna, emulando el comportamiento de un UDT moderno.
+### 4. Transacciones (Persistencia)
 
-Evidencia en Código:
+- **Estado:** Cumplido
+    
+- **Descripción:** Las operaciones críticas de creación, actualización y eliminación se manejan dentro de bloques transaccionales atómicos.
+    
+- **Implementación:** Uso de sesiones de base de datos con `commit` explícito y `rollback` automático en caso de error.
+    
 
-Archivo (Modelo): app/models/producto.py
+### 5. Consultas Polimórficas
 
-from sqlalchemy.types import JSON
-# ...
-dims = Column(JSON, nullable=True) # Almacena el objeto complejo
+- **Estado:** Cumplido
+    
+- **Descripción:** El sistema permite realizar consultas sobre la superclase que resuelven automáticamente las instancias de las subclases correspondientes.
+    
+- **Implementación:** Al consultar el endpoint de productos generales, el ORM realiza los `JOINs` necesarios para devolver una lista heterogénea de objetos (Bebidas, Carnes, Abarrotes) con sus atributos específicos.
+    
 
+### 6. Método Almacenado
 
+- **Estado:** Cumplido
+    
+- **Descripción:** La lógica de negocio compleja se ha encapsulado dentro del motor de base de datos.
+    
+- **Implementación:** Se definió la función `calcular_valor_inventario` en PL/pgSQL, la cual es invocada directamente desde el backend mediante sentencias SQL textuales.
+    
 
-Archivo (Esquema): app/schemas/producto.py
+## Instrucciones de Ejecución
 
-class Dimensiones(BaseModel):
-    medida_alto: float
-    medida_ancho: float
-    # ...
+### 1. Levantar el Entorno (Backend + Base de Datos)
 
+Abra una terminal en la carpeta raíz del proyecto y ejecute:
 
+```
+docker compose up --build
+```
 
-3. Referencias a Objetos (OIDs)
+Espere unos segundos hasta ver el mensaje `Application startup complete`.
 
-Requisito: Usar referencias directas a objetos para relaciones clave.
-Estado: Cumplido
+- 🌐 **API:** `http://localhost:8000`
+    
+- 🗄️ **Base de Datos:** Puerto `5432`
+    
 
-Justificación Técnica:
-Se implementó una relación Referencial entre Producto y Ubicacion. El producto contiene una referencia (Foreign Key) que apunta a la instancia del objeto Ubicacion donde se encuentra almacenado.
+### 2. Evaluación de Scripts SQL (Parte 2 de la Rúbrica)
 
-Evidencia en Código:
+Para verificar que los scripts SQL (`01_ddl_esquema.sql` y `02_dml_pruebas.sql`) son correctos y funcionan de manera autónoma en el motor de base de datos, ejecute los siguientes comandos en otra terminal.
 
-Archivo: app/models/producto.py
+Esto creará una base de datos limpia llamada `tienda` y ejecutará los scripts entregables:
 
-# Referencia al objeto Ubicacion
-id_ubicacion = Column(Integer, ForeignKey("ubicaciones.id_ubicacion"))
-ubicacion = relationship("Ubicacion", back_populates="productos")
+**Paso A: Crear base de datos de prueba**
 
+```
+docker compose exec db psql -U postgres -c "CREATE DATABASE tienda;"
+```
 
+_(Si la base de datos ya existe, puede omitir este paso o borrarla previamente)_
 
-4. Transacciones (Persistencia)
+**Paso B: Ejecutar DDL (Creación de Esquema, Tipos y Funciones)**
 
-Requisito: Demostrar el uso de transacciones (BEGIN, COMMIT, ROLLBACK).
-Estado: Cumplido
+```
+docker compose exec -T db psql -U postgres -d tienda < scripts/01_ddl_esquema.sql
+```
 
-Justificación Técnica:
-Cada operación de creación, actualización o eliminación (CUD) se maneja dentro de una sesión de base de datos atómica. SQLAlchemy gestiona el BEGIN implícitamente al iniciar la sesión y se requiere un commit() explícito para persistir. Si ocurre un error, FastAPI realiza un ROLLBACK automático (cierre de sesión sin guardar).
+_(Asegúrese de ajustar la ruta `scripts/` si sus archivos están en la raíz)_
 
-Evidencia en Código:
+**Paso C: Ejecutar DML (Datos de prueba y Consultas Complejas)**
 
-Archivo: app/routers/productos.py
+```
+docker compose exec -T db psql -U postgres -d tienda < scripts/02_dml_pruebas.sql
+```
 
-@router.post("/bebidas", ...)
-async def crear_bebida(...):
-    # Inicia transacción implícita
-    nuevo = Bebida(**item.dict())
-    db.add(nuevo)
+> **Nota:** Si no aparecen errores, los scripts cumplen con la integridad referencial y la lógica SQL solicitada.
 
-    # Confirma la transacción (COMMIT)
-    await db.commit() 
+## Estructura del Proyecto
 
-    # Recupera el objeto persistido
-    await db.refresh(nuevo)
-    return nuevo
-
-
-
-5. Consultas Polimórficas
-
-Requisito: Consultas que demuestren navegación sobre la jerarquía de herencia.
-Estado: Cumplido
-
-Justificación Técnica:
-El endpoint general de productos realiza una consulta polimórfica. Al consultar la tabla base Producto, el ORM automáticamente realiza los JOINs necesarios para traer las instancias correctas de las subclases (Bebida, Carne, etc.) en una sola lista heterogénea.
-
-Evidencia en Código:
-
-Archivo: app/routers/productos.py
-
-@router.get("/", response_model=List[ProductoResponse])
-async def leer_productos(...):
-    # Esta consulta trae TODOS los tipos de hijos automáticamente
-    result = await db.execute(select(Producto))
-    return result.scalars().all()
-
-
-
-6. Método Almacenado
-
-Requisito: Invocación de métodos almacenados en las consultas.
-Estado: Cumplido
-
-Justificación Técnica:
-Se definió una función almacenada en PostgreSQL (calcular_valor_total u otra lógica de negocio) que encapsula lógica en la base de datos. Desde el backend (FastAPI), se invoca esta función utilizando sentencias SQL textuales (text) a través de SQLAlchemy, demostrando la interacción directa con métodos del SGBD.
-
-Evidencia en Código:
-
-Archivo: app/routers/productos.py
-
-from sqlalchemy import text
-
-@router.get("/{id}/valor")
-async def valor_inventario(id: int, db: AsyncSession = Depends(get_db)):
-    # Invoca a la función almacenada en PostgreSQL
-    result = await db.execute(text("SELECT calcular_valor_total(:id)"), {"id": id})
-    return {"valor": result.scalar()}
-
+- `app/`: Código fuente del Backend (FastAPI, Modelos SQLAlchemy).
+    
+- `scripts/01_ddl_esquema.sql`: Script de definición de estructura (Entregable).
+    
+- `scripts/02_dml_pruebas.sql`: Script de manipulación y consultas (Entregable).
+    
+- `docker-compose.yml`: Orquestación de contenedores.
