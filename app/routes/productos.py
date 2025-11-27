@@ -164,3 +164,28 @@ async def obtener_valor_inventario(producto_id: int, db: AsyncSession = Depends(
         "id_prod": producto_id, 
         "valor_inventario_calculado_en_db": valor_total
     }
+
+# Ruta para crear una nueva ubicación
+@router.post("/ubicaciones/", response_model=UbicacionResponse)
+async def crear_ubicacion(ubicacion: ubicacionCreate, db: AsyncSession = Depends(get_db)):
+    nueva_ubicacion = Ubicacion(**ubicacion.dict())
+    db.add(nueva_ubicacion)
+    await db.commit()
+    await db.refresh(nueva_ubicacion)
+    return nueva_ubicacion
+    
+# Ruta para actualizar una ubicación existente
+@router.put("/ubicaciones/{ubicacion_id}", response_model=UbicacionResponse)
+async def actualizar_ubicacion(ubicacion_id: int, ubicacion: ubicacionCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Ubicacion).where(Ubicacion.id_ubicacion == ubicacion_id))
+    ubicacion_existente = result.scalar_one_or_none()
+    if ubicacion_existente is None:
+        raise HTTPException(status_code=404, detail="Ubicación no encontrada")
+    
+    for key, value in ubicacion.dict().items():
+        setattr(ubicacion_existente, key, value)
+    
+    db.add(ubicacion_existente)
+    await db.commit()
+    await db.refresh(ubicacion_existente)
+    return ubicacion_existente
