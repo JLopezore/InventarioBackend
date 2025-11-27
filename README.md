@@ -89,9 +89,9 @@ docker compose up --build
 
 Espere unos segundos hasta ver el mensaje `Application startup complete`.
 
-- 🌐 **API:** `http://localhost:8000`
+- **API:** `http://localhost:8000`
     
-- 🗄️ **Base de Datos:** Puerto `5432`
+- **Base de Datos:** Puerto `5432`
     
 
 ### 2. Evaluación de Scripts SQL (Parte 2 de la Rúbrica)
